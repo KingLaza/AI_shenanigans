@@ -1,7 +1,7 @@
 from pygame import Vector2
 
-from models.game import Game
-from models.player import Player
+from AI_platformer.models import Game
+from AI_platformer.models import Player
 
 if __name__ == '__main__':
     WIDTH, HEIGHT = 800, 600
