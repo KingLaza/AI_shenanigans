@@ -1,10 +1,12 @@
 import pygame
 
 class Game:
-    GRAVITY = 0.5
     MIN_CHARGE = 1
     MAX_CHARGE = 60
     MAX_JUMP_HEIGHT = 100
+    MOVE_COUNT = 20
+    FPS = 60
+    GRAVITY = (9.81 / FPS) * 3
     BLUE = (0, 0, 255)
     WHITE = (255, 255, 255)
 
@@ -61,7 +63,7 @@ class Game:
             self.handle_events()  # <- process inputs / quit events
             self.update()  # <- update game state
             self.render()  # <- draw stuff
-            self.clock.tick(60)  # <- limit to 60 FPS
+            self.clock.tick(Game.FPS)  # <- limit to 60 FPS
 
     def close_game(self):
         pygame.quit()
