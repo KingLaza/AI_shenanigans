@@ -1,9 +1,13 @@
 import pygame
+from pygame.examples.moveit import WIDTH, HEIGHT
+
+from player import Player
 
 class Game:
     MIN_CHARGE = 1
     MAX_CHARGE = 60
     MAX_JUMP_HEIGHT = 100
+    WALK_SPEED = 3      #could be more
     MOVE_COUNT = 20
     FPS = 60
     GRAVITY = (9.81 / FPS) * 3
@@ -24,6 +28,10 @@ class Game:
 
         # Set the clock for FPS control
         self.clock = pygame.time.Clock()
+
+        #adding player and all that:
+        self.add_player(Player())       #right?
+        self.set_players_positions()
 
     def add_player(self, player):
         self.players.add(player)
@@ -58,11 +66,23 @@ class Game:
         # Update game state (move players, check collisions, etc.)
         self.process_players()
 
+    def update_players(self):
+        for player in self.players:
+            player.play_move()
+            player.apply_gravity()
+            player.update_position()
+
+    def set_players_positions(self):
+        for player in self.players:
+            player.set_position(WIDTH//2, HEIGHT-60)        #I guess
+
     def run(self):
         while self.running:
             self.handle_events()  # <- process inputs / quit events
             self.update()  # <- update game state
+            self.update_players()
             self.render()  # <- draw stuff
+            self.render_players()
             self.clock.tick(Game.FPS)  # <- limit to 60 FPS
 
     def close_game(self):
