@@ -1,8 +1,9 @@
 from pygame.math import Vector2
 import uuid
 
-from game import Game
-from move import Move
+from .configs import Configs
+
+from .move import Move
 
 class Player:
     def __init__(self, position=Vector2(0,0), width=30, height=60, type="CPU"):
@@ -16,7 +17,7 @@ class Player:
         self.charging = False
         self.type = type
         self.curr_move_count = 0
-        self.moves = [Move() for _ in range(Game.MOVE_COUNT)]
+        self.moves = [Move() for _ in range(Configs.MOVE_COUNT)]
         self.curr_move = self.moves[0]
         self.current_charge = self.curr_move.initial_strength  #change if non robot plays
         self.move_over = False
@@ -35,7 +36,7 @@ class Player:
             self.move_over = False
             self.velocity = Vector2(0, 0)       #better to be here I guess (should be useless now)
             self.curr_move_count += 1
-            if self.curr_move_count >= Game.MOVE_COUNT:
+            if self.curr_move_count >= Configs.MOVE_COUNT:
                 return
             else:
                 self.curr_move = self.moves[self.curr_move_count]
@@ -56,7 +57,7 @@ class Player:
                     if self.current_charge == 0:
                         self.on_ground = False
                         self.jumping = True
-                        self.velocity = Vector2(-Game.MAX_CHARGE/2, -self.curr_move.initial_strength)
+                        self.velocity = Vector2(-Configs.MAX_CHARGE/2, -self.curr_move.initial_strength)
                     if self.current_charge == -1:
                         self.move_over = True
                     self.current_charge -= 1
@@ -65,7 +66,7 @@ class Player:
                     if self.current_charge == 0:
                         self.on_ground = False
                         self.jumping = True
-                        self.velocity = Vector2(Game.MAX_CHARGE / 2, -self.curr_move.initial_strength)
+                        self.velocity = Vector2(Configs.MAX_CHARGE / 2, -self.curr_move.initial_strength)
                     if self.current_charge == -1:
                         self.move_over = True
                         self.velocity = Vector2(0, 0)
@@ -76,7 +77,7 @@ class Player:
                         self.move_over = True
                         self.velocity = Vector2(0, 0)
                     else:
-                        self.velocity = Vector2(-Game.WALK_SPEED, 0)
+                        self.velocity = Vector2(-Configs.WALK_SPEED, 0)
                         self.current_charge -= 1
                     # hodanje na levo
                 case 4:
@@ -84,14 +85,14 @@ class Player:
                         self.move_over = True
                         self.velocity = Vector2(0, 0)
                     else:
-                        self.velocity = Vector2(Game.WALK_SPEED, 0)
+                        self.velocity = Vector2(Configs.WALK_SPEED, 0)
                         self.current_charge -= 1
                     # hodanje ne desno
         return
 
     def apply_gravity(self):
         if self.jumping:
-            self.velocity.y += Game.GRAVITY     #It's plus.. I didn't make a mistake..
+            self.velocity.y += Configs.GRAVITY     #It's plus.. I didn't make a mistake..
 
     def update_position(self):
         if self.velocity != Vector2(0, 0):

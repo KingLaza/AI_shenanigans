@@ -3,6 +3,7 @@ from pygame import Vector2
 from models import Game
 from models import Player
 
+
 if __name__ == '__main__':
     WIDTH, HEIGHT = 800, 600
 

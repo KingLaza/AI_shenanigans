@@ -1,18 +1,19 @@
 import pygame
 from pygame.examples.moveit import WIDTH, HEIGHT
 
-from player import Player
+from .configs import Configs
+from .player import Player
 
 class Game:
-    MIN_CHARGE = 1
-    MAX_CHARGE = 60
-    MAX_JUMP_HEIGHT = 100
-    WALK_SPEED = 3      #could be more
-    MOVE_COUNT = 20
-    FPS = 60
-    GRAVITY = (9.81 / FPS) * 3
-    BLUE = (0, 0, 255)
-    WHITE = (255, 255, 255)
+    MIN_CHARGE = Configs.MIN_CHARGE
+    MAX_CHARGE = Configs.MAX_CHARGE
+    MAX_JUMP_HEIGHT = Configs.MAX_JUMP_HEIGHT
+    WALK_SPEED = Configs.WALK_SPEED      #could be more
+    MOVE_COUNT = Configs.MOVE_COUNT
+    FPS = Configs.FPS
+    GRAVITY = Configs.GRAVITY
+    BLUE = Configs.BLUE
+    WHITE = Configs.WHITE
 
     def __init__(self, map="classic"):
         self.map = map
@@ -30,8 +31,7 @@ class Game:
         self.clock = pygame.time.Clock()
 
         #adding player and all that:
-        self.add_player(Player())       #right?
-        self.set_players_positions()
+        #nah, not for now. bust later we need to add a lot of players, maybe not here but..
 
     def add_player(self, player):
         self.players.add(player)
