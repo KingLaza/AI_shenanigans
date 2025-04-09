@@ -9,7 +9,7 @@ class Player:
     def __init__(self, position=Vector2(0,0), width=30, height=60, type="CPU"):
         self.position = position
         self.width = width
-        self.height = height
+        self.height = height            #maybe move to configs later
         self.id = uuid.uuid4()
         self.velocity = Vector2(0, 0)
         self.jumping = False
@@ -41,6 +41,7 @@ class Player:
             else:
                 self.curr_move = self.moves[self.curr_move_count]
                 self.current_charge = self.curr_move.initial_strength
+                print(self.current_charge)
 
         if self.on_ground:
             match self.curr_move.move_type:
@@ -57,7 +58,7 @@ class Player:
                     if self.current_charge == 0:
                         self.on_ground = False
                         self.jumping = True
-                        self.velocity = Vector2(-Configs.MAX_CHARGE/2, -self.curr_move.initial_strength)
+                        self.velocity = Vector2(-Configs.WALK_SPEED, -self.curr_move.initial_strength)
                     if self.current_charge == -1:
                         self.move_over = True
                     self.current_charge -= 1
@@ -66,7 +67,7 @@ class Player:
                     if self.current_charge == 0:
                         self.on_ground = False
                         self.jumping = True
-                        self.velocity = Vector2(Configs.MAX_CHARGE / 2, -self.curr_move.initial_strength)
+                        self.velocity = Vector2(Configs.WALK_SPEED, -self.curr_move.initial_strength)
                     if self.current_charge == -1:
                         self.move_over = True
                         self.velocity = Vector2(0, 0)

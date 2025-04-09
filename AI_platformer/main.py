@@ -9,9 +9,10 @@ if __name__ == '__main__':
 
     game = Game()
 
-    game.add_player(Player(position=Vector2(WIDTH // 2, HEIGHT - 120)))
+    game.add_player(Player(position=Vector2(WIDTH // 2, HEIGHT - 60)))
 
     game.run()
+    #game.run_test_player()
 
 
 

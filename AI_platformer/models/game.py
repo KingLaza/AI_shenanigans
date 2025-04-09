@@ -2,6 +2,7 @@ import pygame
 from pygame.examples.moveit import WIDTH, HEIGHT
 
 from .configs import Configs
+from .data import LINES
 from .player import Player
 from .line import Line
 
@@ -17,15 +18,16 @@ class Game:
     WHITE = Configs.WHITE
     BLACK = Configs.BLACK
 
-    GROUND_Y = HEIGHT
+    GROUND_Y = HEIGHT+60
+    print(WIDTH, HEIGHT, "za game")
 
     def __init__(self, map="classic"):
         self.map = map
         self.players = set()
         self.collision_lines = []
         self.running = True
-        self.collision_lines = [((0, HEIGHT+60), (WIDTH+200, HEIGHT+60))]           #don't know why it has to be +200 on width but ok
-        #self.collision_lines.append(Line(0, HEIGHT - 30, WIDTH, HEIGHT - 30))
+        #self.collision_lines = [((0, HEIGHT+60), (WIDTH+200, HEIGHT+60))]           #don't know why it has to be +200 on width but ok
+        self.collision_lines = [Line(x1, y1, x2, y2, type) for (x1, y1, x2, y2, type) in LINES]
 
         pygame.init()
 
@@ -47,14 +49,50 @@ class Game:
             print("Very important work")
 
     def collision_handler(self):
-        ground_y = self.GROUND_Y
         for player in self.players:
+            player.on_ground = False  # Reset before checking
+
+            for line in self.collision_lines:
+                x1, y1, x2, y2 = line.x1, line.y1, line.x2, line.y2
+                margin_of_error = 10
+
+                if line.type == "Horizontal":
+                    # Check if player is falling and is above the line, but close enough to "land" on it
+                    if (
+                            player.velocity.y >= 0 and
+                            player.position.y <= y1 and
+                            abs(player.position.y + player.velocity.y - y1) < margin_of_error and  # Tweak threshold as needed
+                            x1 <= player.position.x <= x2
+                    ):
+                        player.position.y = y1
+                        player.velocity.y = 0
+                        player.on_ground = True
+                        player.jumping = False
+
+
+                elif line.type == "Vertical":
+                    # Normalize y1 and y2 to make sure y1 <= y2
+                    y_top = min(y1, y2)
+                    y_bottom = max(y1, y2)
+                    player_half_width = player.width / 2 if hasattr(player, 'width') else 0  # Optional
+                    if (
+                        y_top <= player.position.y <= y_bottom and
+                        abs(player.position.x - x1) <= margin_of_error + player_half_width
+                    ):
+                        player.velocity.x = -player.velocity.x  # Bounce off
+                        # Optional: nudge player slightly away to avoid sticking
+                        # if player.position.x < x1:
+                        #     player.position.x = x1 - (margin_of_error + 1)
+                        # else:
+                        #     player.position.x = x1 + (margin_of_error + 1)
+            # Ground collision (if still in air and hits bottom)
+            """ground_y = self.GROUND_Y
             if player.position.y >= ground_y:
                 player.position.y = ground_y
                 player.velocity.y = 0
                 player.velocity.x = 0
-                player.on_ground = True  # Player lands
-                player.jumping = False
+                player.on_ground = True
+                player.jumping = False"""
 
     def render(self):
         # Render game elements (players, background, etc.)
@@ -70,11 +108,11 @@ class Game:
     def render_players(self):
         for player in self.players:
             pos = player.position
-            pygame.draw.rect(self.screen, Game.BLUE, (pos.x, pos.y, player.width, player.height))
+            pygame.draw.rect(self.screen, Game.BLUE, (pos.x, pos.y - player.height, player.width, player.height))
 
     def render_lines(self):
         for line in self.collision_lines:
-            pygame.draw.line(self.screen, self.BLACK, line[0], line[1], 3)
+            pygame.draw.line(self.screen, self.BLACK, line.start, line.end, 3)
 
     def handle_events(self):
         # Handle game events (key presses, etc.)
@@ -93,6 +131,14 @@ class Game:
             player.apply_gravity()
             player.update_position()
 
+    def update_test_player(self):    #for you to test it yourself
+        player = self.players[0]
+
+        #logic for move making here
+
+        player.apply_gravity()
+        player.update_position()
+
     def set_players_positions(self):
         for player in self.players:
             player.set_position(WIDTH//2, HEIGHT-60)        #I guess
@@ -106,6 +152,13 @@ class Game:
             self.render()  # <- draw stuff
             #self.render_players()
             self.clock.tick(Game.FPS)  # <- limit to 60 FPS
+
+    def runTest(self):
+        while self.running:
+            self.update_test_player()
+            self.collision_handler()
+            self.render()
+            self.clock.tick(Game.FPS)
 
     def close_game(self):
         pygame.quit()

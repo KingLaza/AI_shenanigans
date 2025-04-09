@@ -1,6 +1,6 @@
 class Configs:
     MIN_CHARGE = 1
-    MAX_CHARGE = 30
+    MAX_CHARGE = 20
     MAX_JUMP_HEIGHT = 100
     WALK_SPEED = 4  # could be more
     MOVE_COUNT = 20
