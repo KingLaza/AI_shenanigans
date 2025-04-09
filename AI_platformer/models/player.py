@@ -92,7 +92,7 @@ class Player:
         return
 
     def apply_gravity(self):
-        if self.jumping:
+        if self.jumping and not self.on_ground:
             self.velocity.y += Configs.GRAVITY     #It's plus.. I didn't make a mistake..
 
     def update_position(self):
@@ -102,4 +102,73 @@ class Player:
 
     def set_position(self, x, y):
         self.position = Vector2(x, y)
+
+
+    def intersects_line(self, line):
+        player_lines = self.get_rectangle_edges(self.position.x, self.position.y, self.width, self.height)
+        line_vector = Vector2(line.x2-line.x1, line.y2-line.y1)
+
+        for player_line in player_lines:
+            if self.line_intersect(player_line[0], player_line[1], line):
+                return True
+        return False
+
+    def line_intersect(self, p1, p2, line):
+        # Convert player line segment to vector
+        vect1 = p2 - p1
+        # Convert the other line segment to a vector
+        line_vector = Vector2(line.x2 - line.x1, line.y2 - line.y1)
+
+        bDotDPerp = vect1.x * line_vector.y - vect1.y * line_vector.x
+
+        # If the determinant is zero, the lines are parallel and do not intersect
+        if bDotDPerp == 0:
+            return False
+
+        # Compute the vector from p1 to the line's start (line.x1, line.y1)
+        vect2 = line.start - p1
+
+        # Parametric intersection calculation
+        t = (vect2.x * line_vector.y - vect2.y * line_vector.x) / bDotDPerp
+        u = (vect2.x * vect1.y - vect2.y * vect1.x) / bDotDPerp
+
+        # If t and u are between 0 and 1, the lines intersect
+        if 0 <= t <= 1 and 0 <= u <= 1:
+            return True
+
+        return False
+
+    def get_rectangle_edges(self, rect_x, rect_y, width, height):
+        # Define the 4 corners of the rectangle
+        top_left = Vector2(rect_x, rect_y)  # Top-left corner at (rect_x, rect_y)
+        top_right = Vector2(rect_x + width, rect_y)  # Top-right corner
+        bottom_left = Vector2(rect_x, rect_y + height)  # Bottom-left corner
+        bottom_right = Vector2(rect_x + width, rect_y + height)  # Bottom-right corner
+
+        # Return pairs of points representing the edges (lines) of the rectangle
+        edges = [
+            (top_left, top_right),  # Top edge
+            (top_right, bottom_right),  # Right edge
+            (bottom_right, bottom_left),  # Bottom edge
+            (bottom_left, top_left)  # Left edge
+        ]
+
+        return edges
+
+    #INSIDE, LEFT, RIGHT, BOTTOM, TOP = 0, 1, 2, 4, 8
+
+    # def compute_out_code(self, x, y, px1, py1, px2, py2):
+    #     code = Player.INSIDE
+    #
+    #     if x < px1:
+    #         code |= Player.LEFT
+    #     elif x > px2:
+    #         code |= Player.RIGHT
+    #     if y < py1:
+    #         code |= Player.BOTTOM
+    #     elif y > py2:
+    #         code |= Player.TOP
+    #     return code
+    #
+    # def intersects_line(self, line):
 

@@ -1,4 +1,5 @@
 import copy
+import math
 
 import pygame
 from pygame.examples.moveit import WIDTH, HEIGHT
@@ -29,7 +30,7 @@ class Game:
         self.collision_lines = []
         self.running = True
         #self.collision_lines = [((0, HEIGHT+60), (WIDTH+200, HEIGHT+60))]           #don't know why it has to be +200 on width but ok
-        self.collision_lines = [Line(x1, y1, x2, y2, type) for (x1, y1, x2, y2, type) in LINES]
+        self.collision_lines = [Line(x1, y1, x2, y2) for (x1, y1, x2, y2) in LINES]
 
         pygame.init()
 
@@ -88,17 +89,58 @@ class Game:
                         # else:
                         #     player.position.x = x1 + (margin_of_error + 1)
             # Ground collision (if still in air and hits bottom)
-        for player in self.players:
-            ground_y = self.GROUND_Y
-            if player.position.y >= ground_y:
-                player.position.y = ground_y
-                player.velocity.y = 0
-                player.velocity.x = 0
-                player.on_ground = True
-                player.jumping = False
+        # for player in self.players:
+        #     ground_y = self.GROUND_Y
+        #     if player.position.y >= ground_y:
+        #         player.position.y = ground_y
+        #         player.velocity.y = 0
+        #         player.velocity.x = 0
+        #         player.on_ground = True
+        #         player.jumping = False
 
         for player in self.players:
-            
+            # if player.on_ground:
+            #     continue
+
+            for line in self.collision_lines:
+                if not player.intersects_line(line):
+                    continue
+
+                type = line.type
+                final_position = player.position
+                print("line hit: ", type, line.start, line.end, "player pos", player.position)
+                match type:
+                    case "horizontal":
+
+                        if player.velocity.y > 0:
+                            player.position.y = line.y1 - player.height
+                            print(player.position, player.velocity)
+                            player.velocity.y = 0
+                            player.velocity.x = 0
+                            player.on_ground = True
+                            player.jumping = False
+                        elif player.velocity.y < 0:
+                            player.position.y = line.y1
+                            player.velocity.y = 0
+
+                    case "vertical":
+                        distance_to_line = player.position.x - line.x1
+
+                        move_distance = player.width + 12 if player.velocity.x > 0 else -12  # This is the minimum distance to move beyond the line
+
+                        if distance_to_line > 0:
+                            player.position.x = line.x1 + move_distance
+                        else:  # Player is to the left of the line
+                            player.position.x = line.x1 - move_distance
+
+
+                        player.velocity.x *= -1
+
+
+
+
+
+
 
     def render(self):
         # Render game elements (players, background, etc.)
@@ -118,7 +160,7 @@ class Game:
     def render_players(self):
         for player in self.players:
             pos = player.position
-            pygame.draw.rect(self.screen, Game.BLUE, (pos.x, pos.y - player.height, player.width, player.height))
+            pygame.draw.rect(self.screen, Game.BLUE, (pos.x, pos.y, player.width, player.height))
 
     def render_lines(self):
         for line in self.collision_lines:
