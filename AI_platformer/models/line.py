@@ -6,4 +6,14 @@ class Line:
         self.y2 = y2
         self.start = (self.x1, self.y1)
         self.end = (self.x2, self.y2)
-        self.type = type
+        self.type = self.get_type(x1,y1, x2,y2)
+
+    def get_type(self, x1, y1, x2, y2):
+        if y1 == y2:
+            return "horizontal"
+        if x1 == x2:
+            return "vertical"
+        if y1 == y1 and x2 == x1:
+            return "ERROR CAN NOT HAPPEN FIX IT OR GAME WILL EXPLODE"
+        else:
+            return "diagonal"

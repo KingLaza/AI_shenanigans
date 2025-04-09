@@ -6,10 +6,12 @@ from models import Player
 
 if __name__ == '__main__':
     WIDTH, HEIGHT = 800, 600
-
+    player_start_position = Vector2(WIDTH // 2, HEIGHT - 60)
     game = Game()
 
-    game.add_player(Player(position=Vector2(WIDTH // 2, HEIGHT - 60)))
+    #game.add_player(Player(position=Vector2(WIDTH // 2, HEIGHT - 60)))
+
+    game.add_cpu_players(5, player_start_position)
 
     game.run()
     #game.run_test_player()
