@@ -122,18 +122,14 @@ class Game:
                             player.on_ground = True
                             player.jumping = False
                         elif player.velocity.y < 0:
-                            player.position.y = line.y1
+                            player.position.y = line.y1 - 2
                             player.velocity.y = 0
 
                     case "vertical":
-                        distance_to_line = player.position.x - line.x1
-
-                        move_distance = player.width + 12 if player.velocity.x > 0 else -12  # This is the minimum distance to move beyond the line
-
-                        if distance_to_line > 0:
-                            player.position.x = line.x1 + move_distance
-                        else:  # Player is to the left of the line
-                            player.position.x = line.x1 - move_distance
+                        if player.velocity.x > 0:
+                            player.position.x = line.x1 - player.width - 1
+                        elif player.velocity.x < 0:
+                            player.position.x = line.x1  + 2
                         player.velocity.x *= -1
 
 
