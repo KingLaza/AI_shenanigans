@@ -235,11 +235,12 @@ class Game:
         for event in pygame.event.get():
 
             if event.type == pygame.QUIT:
-                running = False
+                self.running = False
 
             # Start charging jump
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE and player.on_ground:
+                    player.velocity.x = 0
                     player.current_charge += 0.5  # Start charging
                     player.charging = True
                     player.jump_direction = "up"  # Reset to straight jump
