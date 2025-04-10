@@ -1,13 +1,14 @@
 import copy
-import math
 
 import pygame
 from pygame.examples.moveit import WIDTH, HEIGHT
+from pygame.math import Vector2
 
 from .configs import Configs
 from .data import LINES
-from .player import Player
 from .line import Line
+from .player import Player
+
 
 class Game:
     MIN_CHARGE = Configs.MIN_CHARGE
@@ -31,6 +32,7 @@ class Game:
         self.running = True
         #self.collision_lines = [((0, HEIGHT+60), (WIDTH+200, HEIGHT+60))]           #don't know why it has to be +200 on width but ok
         self.collision_lines = [Line(x1, y1, x2, y2) for (x1, y1, x2, y2) in LINES]
+        self.testPlayer = Player(Vector2(WIDTH//2, HEIGHT-120))     #added for testing
 
         pygame.init()
 
@@ -108,7 +110,7 @@ class Game:
 
                 type = line.type
                 final_position = player.position
-                print("line hit: ", type, line.start, line.end, "player pos", player.position)
+                #print("line hit: ", type, line.start, line.end, "player pos", player.position)
                 match type:
                     case "horizontal":
 
@@ -132,14 +134,7 @@ class Game:
                             player.position.x = line.x1 + move_distance
                         else:  # Player is to the left of the line
                             player.position.x = line.x1 - move_distance
-
-
                         player.velocity.x *= -1
-
-
-
-
-
 
 
     def render(self):
@@ -185,9 +180,12 @@ class Game:
             player.update_position()
 
     def update_test_player(self):    #for you to test it yourself
-        player = self.players[0]
+
+        for p in self.players:
+            player = p
 
         #logic for move making here
+        self.test_player_handler(player)
 
         player.apply_gravity()
         player.update_position()
@@ -207,7 +205,10 @@ class Game:
             self.clock.tick(Game.FPS)  # <- limit to 60 FPS
 
     def runTest(self):
+        player = Player(Vector2(WIDTH//2, HEIGHT))
+        self.add_player(player)
         while self.running:
+            #self.handle_events()  # <- process inputs / quit events
             self.update_test_player()
             self.collision_handler()
             self.render()
@@ -216,3 +217,74 @@ class Game:
     def close_game(self):
         pygame.quit()
         quit()
+
+    def test_player_handler(self, player):      #suboptimal
+        keys = pygame.key.get_pressed()
+        #player = self.players[0]
+
+        # Walking (only allowed if NOT charging a jump)
+        if not player.charging and player.on_ground:
+            player.current_charge = 0
+            if keys[pygame.K_LEFT]:
+                player.velocity.x = -self.WALK_SPEED
+            elif keys[pygame.K_RIGHT]:
+                player.velocity.x = self.WALK_SPEED
+            else:
+                player.velocity.x = 0
+
+        for event in pygame.event.get():
+
+            if event.type == pygame.QUIT:
+                running = False
+
+            # Start charging jump
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE and player.on_ground:
+                    player.current_charge += 0.5  # Start charging
+                    player.charging = True
+                    player.jump_direction = "up"  # Reset to straight jump
+
+            # Release jump
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_SPACE and player.charging:
+                    # Determine jump direction only at the moment of release
+                    player.jumping = True
+                    if keys[pygame.K_LEFT]:
+                        player.jump_direction = "left"
+                    elif keys[pygame.K_RIGHT]:
+                        player.jump_direction = "right"
+
+                    # Calculate jump force
+                    jump_force = player.current_charge #min_jump_strength + (jump_charge / abs(max_jump_strength)) * (max_jump_strength - min_jump_strength)
+                    player.current_charge = 0
+                    player.velocity.y = -jump_force
+
+                    if player.jump_direction == "left":
+                        player.velocity.x = -self.WALK_SPEED
+                    elif player.jump_direction == "right":
+                        player.velocity.x = self.WALK_SPEED
+                    else:
+                        player.velocity.x = 0  # Jump straight up
+
+                    player.charging = False
+                    player.on_ground = False  # Player leaves the ground
+
+        # Charge jump if space is held
+        if player.charging:
+            player.current_charge += 1      #yea, why not
+            if player.current_charge >= abs(self.MAX_CHARGE):  # Auto-jump when fully charged
+                if keys[pygame.K_LEFT]:
+                    player.jump_direction = "left"
+                elif keys[pygame.K_RIGHT]:
+                    player.jump_direction = "right"
+
+                player.velocity.y = -self.MAX_CHARGE
+                if player.jump_direction == "left":
+                    player.velocity.x = -self.WALK_SPEED
+                elif player.jump_direction == "right":
+                    player.velocity.x = self.WALK_SPEED
+                else:
+                    player.velocity.x = 0
+
+                player.charging = False
+                player.on_ground = False

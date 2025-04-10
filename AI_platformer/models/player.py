@@ -21,6 +21,7 @@ class Player:
         self.curr_move = self.moves[0]
         self.current_charge = self.curr_move.initial_strength  #change if non robot plays
         self.move_over = False
+        self.jump_direction = "up"      #I added this just for the test player
 
     def __hash__(self):
         return hash(self.id)
@@ -92,7 +93,7 @@ class Player:
         return
 
     def apply_gravity(self):
-        if self.jumping and not self.on_ground:
+        if not self.on_ground:                      #removed jumping because of TestPlyaer.. might bring it back later
             self.velocity.y += Configs.GRAVITY     #It's plus.. I didn't make a mistake..
 
     def update_position(self):

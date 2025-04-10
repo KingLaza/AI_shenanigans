@@ -1,8 +1,6 @@
 from pygame import Vector2
 
 from models import Game
-from models import Player
-
 
 if __name__ == '__main__':
     WIDTH, HEIGHT = 800, 600
@@ -11,10 +9,11 @@ if __name__ == '__main__':
 
     #game.add_player(Player(position=Vector2(WIDTH // 2, HEIGHT - 60)))
 
-    game.add_cpu_players(4, player_start_position)
+    # game.add_cpu_players(25, player_start_position)
+    # game.run()
+    game.runTest()          #this game.runTest() is made for debugging and collision checking etc.
 
-    game.run()
-    #game.run_test_player()
+
 
 
 
