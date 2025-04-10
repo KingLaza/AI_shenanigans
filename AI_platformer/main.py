@@ -9,9 +9,9 @@ if __name__ == '__main__':
 
     #game.add_player(Player(position=Vector2(WIDTH // 2, HEIGHT - 60)))
 
-    game.add_cpu_players(100, player_start_position)
-    game.run()
-    #game.runTest()          #this game.runTest() is made for debugging and collision checking etc.
+    #game.add_cpu_players(100, player_start_position)
+    #game.run()
+    game.runTest()          #this game.runTest() is made for debugging and collision checking etc.
 
 
 

@@ -33,7 +33,7 @@ class Game:
         #self.collision_lines = [((0, HEIGHT+60), (WIDTH+200, HEIGHT+60))]           #don't know why it has to be +200 on width but ok
         self.collision_lines = [Line(x1, y1, x2, y2) for (x1, y1, x2, y2) in LINES]
         self.testPlayer = Player(Vector2(WIDTH//2, HEIGHT-120))     #added for testing
-
+        self.prev_click_pos = Vector2(-1, -1)
         pygame.init()
 
         # Set up the screen (you can adjust the dimensions)
@@ -103,13 +103,14 @@ class Game:
         for player in self.players:
             # if player.on_ground:
             #     continue
-
+            was_on_ground = False
             for line in self.collision_lines:
                 if not player.intersects_line(line):
                     continue
 
                 type = line.type
                 final_position = player.position
+
                 #print("line hit: ", type, line.start, line.end, "player pos", player.position)
                 match type:
                     case "horizontal":
@@ -121,8 +122,12 @@ class Game:
                             player.velocity.x = 0
                             player.on_ground = True
                             player.jumping = False
+                            was_on_ground = True
+                            print("Hitting ground")
+                        if player.velocity.y == 0:
+                            was_on_ground = True
                         elif player.velocity.y < 0:
-                            player.position.y = line.y1 - 2
+                            player.position.y = line.y1
                             player.velocity.y = 0
 
                     case "vertical":
@@ -131,6 +136,10 @@ class Game:
                         elif player.velocity.x < 0:
                             player.position.x = line.x1  + 2
                         player.velocity.x *= -1
+
+            if not was_on_ground and player.on_ground:
+                print("Player walked off an edge!")
+                player.on_ground = False
 
 
     def render(self):
@@ -232,6 +241,27 @@ class Game:
 
             if event.type == pygame.QUIT:
                 self.running = False
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:  # Left mouse button
+                    pos = event.pos
+                    if self.prev_click_pos.x != -1 and self.prev_click_pos.y != -1:
+                        dx = abs(pos[0] - self.prev_click_pos.x)
+                        dy = abs(pos[1] - self.prev_click_pos.y)
+
+                        if dx < dy:
+                            # Make it vertical: keep x same as previous
+                            pos = (self.prev_click_pos.x, pos[1])
+                        else:
+                            # Make it horizontal: keep y same as previous
+                            pos = (pos[0], self.prev_click_pos.y)
+
+                        line = Line(self.prev_click_pos.x, self.prev_click_pos.y, pos[0], pos[1])
+                        self.collision_lines.append(line)
+                        self.prev_click_pos = Vector2(-1, -1)
+                    else:
+                        self.prev_click_pos = Vector2(pos[0], pos[1])
+                    print("Left click at:", pos)
 
             # Start charging jump
             if event.type == pygame.KEYDOWN:
