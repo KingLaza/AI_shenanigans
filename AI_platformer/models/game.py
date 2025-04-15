@@ -34,6 +34,7 @@ class Game:
         self.collision_lines = [Line(x1, y1, x2, y2) for (x1, y1, x2, y2) in LINES]
         self.testPlayer = Player(Vector2(WIDTH//2, HEIGHT-120))     #added for testing
         self.prev_click_pos = Vector2(-1, -1)
+        self.game_paused = False
         pygame.init()
 
         # Set up the screen (you can adjust the dimensions)
@@ -166,12 +167,36 @@ class Game:
         for line in self.collision_lines:
             pygame.draw.line(self.screen, self.BLACK, line.start, line.end, 3)
 
-    def handle_events(self):
+    def handle_events(self):            #added a few things
         # Handle game events (key presses, etc.)
         for event in pygame.event.get():
+
             if event.type == pygame.QUIT:
                 self.running = False
 
+            if event.type == pygame.MOUSEBUTTONDOWN and self.game_paused == True:
+                if event.button == 1:  # Left mouse button
+                    pos = event.pos
+                    if self.prev_click_pos.x != -1 and self.prev_click_pos.y != -1:
+                        dx = abs(pos[0] - self.prev_click_pos.x)
+                        dy = abs(pos[1] - self.prev_click_pos.y)
+
+                        if dx < dy:
+                            # Make it vertical: keep x same as previous
+                            pos = (self.prev_click_pos.x, pos[1])
+                        else:
+                            # Make it horizontal: keep y same as previous
+                            pos = (pos[0], self.prev_click_pos.y)
+
+                        line = Line(self.prev_click_pos.x, self.prev_click_pos.y, pos[0], pos[1])
+                        self.collision_lines.append(line)
+                        self.prev_click_pos = Vector2(-1, -1)
+                    else:
+                        self.prev_click_pos = Vector2(pos[0], pos[1])
+                    print("Left click at:", pos)
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_p:
+                    self.game_paused = not self.game_paused
 
     def update(self):
         # Update game state (move players, check collisions, etc.)
@@ -192,28 +217,33 @@ class Game:
         #logic for move making here
         self.test_player_handler(player)
 
-        player.apply_gravity()
-        player.update_position()
+        if not self.game_paused:
+            player.apply_gravity()
+            player.update_position()
 
     def set_players_positions(self):
         for player in self.players:
             player.set_position(WIDTH//2, HEIGHT-60)        #I guess
 
-    def run(self):
+    def run(self, paused=False):
+        self.game_paused = paused
         while self.running:
             self.handle_events()  # <- process inputs / quit events
             #self.update()  # <- update game state
-            self.update_players()
-            self.collision_handler()
+            if not self.game_paused:        #added for paused game (for drawing lines)
+                self.update_players()
+                self.collision_handler()
             self.render()  # <- draw stuff
             #self.render_players()
             self.clock.tick(Game.FPS)  # <- limit to 60 FPS
 
-    def runTest(self):
+    def runTest(self, paused=False):
+        self.game_paused = paused
         player = Player(Vector2(WIDTH//2, HEIGHT))
         self.add_player(player)
         while self.running:
             #self.handle_events()  # <- process inputs / quit events
+
             self.update_test_player()
             self.collision_handler()
             self.render()
@@ -227,20 +257,23 @@ class Game:
         keys = pygame.key.get_pressed()
         #player = self.players[0]
 
-        # Walking (only allowed if NOT charging a jump)
-        if not player.charging and player.on_ground:
-            player.current_charge = 0
-            if keys[pygame.K_LEFT]:
-                player.velocity.x = -self.WALK_SPEED
-            elif keys[pygame.K_RIGHT]:
-                player.velocity.x = self.WALK_SPEED
-            else:
-                player.velocity.x = 0
+
 
         for event in pygame.event.get():
 
             if event.type == pygame.QUIT:
                 self.running = False
+
+                # Start charging jump
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_p:
+                    self.game_paused = not self.game_paused
+                    return
+                if event.key == pygame.K_SPACE and player.on_ground:
+                    player.velocity.x = 0
+                    player.current_charge += 0.5  # Start charging
+                    player.charging = True
+                    player.jump_direction = "up"  # Reset to straight jump
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:  # Left mouse button
@@ -262,14 +295,6 @@ class Game:
                     else:
                         self.prev_click_pos = Vector2(pos[0], pos[1])
                     print("Left click at:", pos)
-
-            # Start charging jump
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE and player.on_ground:
-                    player.velocity.x = 0
-                    player.current_charge += 0.5  # Start charging
-                    player.charging = True
-                    player.jump_direction = "up"  # Reset to straight jump
 
             # Release jump
             if event.type == pygame.KEYUP:
@@ -296,22 +321,33 @@ class Game:
                     player.charging = False
                     player.on_ground = False  # Player leaves the ground
 
-        # Charge jump if space is held
-        if player.charging:
-            player.current_charge += 1      #yea, why not
-            if player.current_charge >= abs(self.MAX_CHARGE):  # Auto-jump when fully charged
+        if not self.game_paused:
+            # Walking (only allowed if NOT charging a jump)
+            if not player.charging and player.on_ground:
+                player.current_charge = 0
                 if keys[pygame.K_LEFT]:
-                    player.jump_direction = "left"
-                elif keys[pygame.K_RIGHT]:
-                    player.jump_direction = "right"
-
-                player.velocity.y = -self.MAX_CHARGE
-                if player.jump_direction == "left":
                     player.velocity.x = -self.WALK_SPEED
-                elif player.jump_direction == "right":
+                elif keys[pygame.K_RIGHT]:
                     player.velocity.x = self.WALK_SPEED
                 else:
                     player.velocity.x = 0
 
-                player.charging = False
-                player.on_ground = False
+            # Charge jump if space is held
+            if player.charging:
+                player.current_charge += 1      #yea, why not
+                if player.current_charge >= abs(self.MAX_CHARGE):  # Auto-jump when fully charged
+                    if keys[pygame.K_LEFT]:
+                        player.jump_direction = "left"
+                    elif keys[pygame.K_RIGHT]:
+                        player.jump_direction = "right"
+
+                    player.velocity.y = -self.MAX_CHARGE
+                    if player.jump_direction == "left":
+                        player.velocity.x = -self.WALK_SPEED
+                    elif player.jump_direction == "right":
+                        player.velocity.x = self.WALK_SPEED
+                    else:
+                        player.velocity.x = 0
+
+                    player.charging = False
+                    player.on_ground = False
