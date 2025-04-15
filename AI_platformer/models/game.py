@@ -5,7 +5,7 @@ from pygame.examples.moveit import WIDTH, HEIGHT
 from pygame.math import Vector2
 
 from .configs import Configs
-from .data import LINES
+from .data import LINES, TYPE_PRIORITY
 from .line import Line
 from .player import Player
 
@@ -31,7 +31,10 @@ class Game:
         self.collision_lines = []
         self.running = True
         #self.collision_lines = [((0, HEIGHT+60), (WIDTH+200, HEIGHT+60))]           #don't know why it has to be +200 on width but ok
-        self.collision_lines = [Line(x1, y1, x2, y2) for (x1, y1, x2, y2) in LINES]
+        self.collision_lines = sorted(
+            [Line(x1, y1, x2, y2) for (x1, y1, x2, y2) in LINES],
+            key=lambda line: TYPE_PRIORITY[line.type]
+        )
         self.testPlayer = Player(Vector2(WIDTH//2, HEIGHT-120))     #added for testing
         self.prev_click_pos = Vector2(-1, -1)
         self.game_paused = False
@@ -133,7 +136,7 @@ class Game:
 
                     case "vertical":
                         if player.velocity.x > 0:
-                            player.position.x = line.x1 - player.width - 1
+                            player.position.x = line.x1 - player.width - 3
                         elif player.velocity.x < 0:
                             player.position.x = line.x1  + 2
                         player.velocity.x *= -1
@@ -290,7 +293,7 @@ class Game:
                             pos = (pos[0], self.prev_click_pos.y)
 
                         line = Line(self.prev_click_pos.x, self.prev_click_pos.y, pos[0], pos[1])
-                        self.collision_lines.append(line)
+                        self.insert_sorted(line)
                         self.prev_click_pos = Vector2(-1, -1)
                     else:
                         self.prev_click_pos = Vector2(pos[0], pos[1])
@@ -351,3 +354,11 @@ class Game:
 
                     player.charging = False
                     player.on_ground = False
+
+    def insert_sorted(self, line):
+        priority = TYPE_PRIORITY[line.type]
+        for i, existing in enumerate(self.collision_lines):
+            if TYPE_PRIORITY[existing.type] > priority:
+                self.collision_lines.insert(i, line)
+                return
+        self.collision_lines.append(line)

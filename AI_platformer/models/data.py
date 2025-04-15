@@ -8,3 +8,9 @@ LINES = [
     #(150, HEIGHT+60, 150, 60),              #added now
     (WIDTH+100, HEIGHT+60, WIDTH+100, 60)
 ]
+
+TYPE_PRIORITY = {
+    "vertical": 2,
+    "diagonal": 1,
+    "horizontal": 0
+}
