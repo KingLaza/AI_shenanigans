@@ -1,7 +1,7 @@
 import copy
 
 import pygame
-from pygame.examples.moveit import WIDTH, HEIGHT
+#from pygame.examples.moveit import WIDTH, HEIGHT
 from pygame.math import Vector2
 
 from .configs import Configs
@@ -22,27 +22,34 @@ class Game:
     WHITE = Configs.WHITE
     BLACK = Configs.BLACK
 
-    GROUND_Y = HEIGHT+60
-    print(WIDTH, HEIGHT, "za game")
+    GROUND_Y = Configs.VIRTUAL_HEIGHT + 60
+    print(Configs.VIRTUAL_WIDTH, Configs.VIRTUAL_HEIGHT, "za game")
 
     def __init__(self, map="classic"):
         self.map = map
         self.players = set()
         self.collision_lines = []
+        self.fullscreen = True  # or False if you start windowed
+        self.x_offset = 0
+        self.y_offset = 0
         self.running = True
         #self.collision_lines = [((0, HEIGHT+60), (WIDTH+200, HEIGHT+60))]           #don't know why it has to be +200 on width but ok
         self.collision_lines = sorted(
             [Line(x1, y1, x2, y2) for (x1, y1, x2, y2) in LINES],
             key=lambda line: TYPE_PRIORITY[line.type]
         )
-        self.testPlayer = Player(Vector2(WIDTH//2, HEIGHT-120))     #added for testing
+        self.testPlayer = Player(Vector2(Configs.VIRTUAL_WIDTH//2, Configs.VIRTUAL_HEIGHT-120))     #added for testing
         self.prev_click_pos = Vector2(-1, -1)
         self.game_paused = False
         pygame.init()
 
         # Set up the screen (you can adjust the dimensions)
-        self.screen = pygame.display.set_mode((800, 600))
-        pygame.display.set_caption("Game Title")
+        #self.screen = pygame.display.set_mode((800, 600))
+        self.real_screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN | pygame.RESIZABLE)  # or specific (1920, 1080)
+        self.virtual_screen = pygame.Surface((Configs.VIRTUAL_WIDTH, Configs.VIRTUAL_HEIGHT))
+        self.screen_rect = self.real_screen.get_rect()
+
+        pygame.display.set_caption("Jump Emperor")
 
         # Set the clock for FPS control
         self.clock = pygame.time.Clock()
@@ -145,30 +152,43 @@ class Game:
                 print("Player walked off an edge!")
                 player.on_ground = False
 
-
     def render(self):
-        # Render game elements (players, background, etc.)
-        self.screen.fill(Game.WHITE)  # Clear the screen with black
-        # You can render players here using Pygame surfaces
-        self.render_lines()
-        # Draw ground
-        self.render_players()
+        self.virtual_screen.fill(Game.WHITE)
+        self.render_lines(self.virtual_screen)
+        self.render_players(self.virtual_screen)
 
+        screen_width, screen_height = self.real_screen.get_size()
+        scale = min(screen_width / Configs.VIRTUAL_WIDTH, screen_height / Configs.VIRTUAL_HEIGHT)
+        new_width = int(Configs.VIRTUAL_WIDTH * scale)
+        new_height = int(Configs.VIRTUAL_HEIGHT * scale)
+        scaled_surface = pygame.transform.scale(self.virtual_screen, (new_width, new_height))
 
-        pygame.display.flip()  # Update the screen
+        self.x_offset = (screen_width - new_width) // 2
+        self.y_offset = (screen_height - new_height) // 2
+
+        self.real_screen.fill((0, 0, 0))  # black bars
+        self.real_screen.blit(scaled_surface, (self.x_offset, self.y_offset))
+        pygame.display.flip()
 
     def add_cpu_players(self, count, start_position):
         for _ in range(count):
             self.add_player(Player(position=copy.deepcopy(start_position)))
 
-    def render_players(self):
+    def render_players(self, surface):
         for player in self.players:
             pos = player.position
-            pygame.draw.rect(self.screen, Game.BLUE, (pos.x, pos.y, player.width, player.height))
+            pygame.draw.rect(surface, Game.BLUE, (pos.x, pos.y, player.width, player.height))
 
-    def render_lines(self):
+    def render_lines(self, surface):
         for line in self.collision_lines:
-            pygame.draw.line(self.screen, self.BLACK, line.start, line.end, 3)
+            pygame.draw.line(surface, self.BLACK, line.start, line.end, 3)
+
+    def toggle_fullscreen(self):
+        self.fullscreen = not self.fullscreen
+        if self.fullscreen:
+            self.window = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+        else:
+            self.window = pygame.display.set_mode((Configs.VIRTUAL_WIDTH, Configs.VIRTUAL_HEIGHT))
 
     def handle_events(self):            #added a few things
         # Handle game events (key presses, etc.)
@@ -179,7 +199,25 @@ class Game:
 
             if event.type == pygame.MOUSEBUTTONDOWN and self.game_paused == True:
                 if event.button == 1:  # Left mouse button
-                    pos = event.pos
+                    mouse_x, mouse_y = event.pos
+                    screen_w, screen_h = pygame.display.get_surface().get_size()
+                    if (mouse_x < self.x_offset or mouse_x > screen_w-self.x_offset):
+                        continue
+                    if (mouse_y < self.y_offset or mouse_y > screen_h-self.y_offset):
+                        continue
+
+                    # Calculate scale ratios
+                    scale_x = Configs.VIRTUAL_WIDTH / (screen_w-2*self.x_offset)
+                    scale_y = Configs.VIRTUAL_HEIGHT / (screen_h-2*self.y_offset)
+
+                    mouse_x = mouse_x - self.x_offset
+                    mouse_y = mouse_y - self.y_offset
+                    print("clicked on pos: ", mouse_x, mouse_y)
+                    # Scale to virtual coordinates
+                    virtual_mouse_x = mouse_x * scale_x
+                    virtual_mouse_y = mouse_y * scale_y
+                    pos = (virtual_mouse_x, virtual_mouse_y)
+
                     if self.prev_click_pos.x != -1 and self.prev_click_pos.y != -1:
                         dx = abs(pos[0] - self.prev_click_pos.x)
                         dy = abs(pos[1] - self.prev_click_pos.y)
@@ -200,6 +238,12 @@ class Game:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_p:
                     self.game_paused = not self.game_paused
+                if event.key == pygame.K_TAB:  # or K_s
+                    self.fullscreen = not self.fullscreen
+                    if self.fullscreen:
+                        pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+                    else:
+                        pygame.display.set_mode((Configs.VIRTUAL_WIDTH, Configs.VIRTUAL_HEIGHT))
 
     def update(self):
         # Update game state (move players, check collisions, etc.)
@@ -226,7 +270,7 @@ class Game:
 
     def set_players_positions(self):
         for player in self.players:
-            player.set_position(WIDTH//2, HEIGHT-60)        #I guess
+            player.set_position(Configs.VIRTUAL_WIDTH//2, Configs.VIRTUAL_HEIGHT-60)        #I guess
 
     def run(self, paused=False):
         self.game_paused = paused
@@ -242,7 +286,7 @@ class Game:
 
     def runTest(self, paused=False):
         self.game_paused = paused
-        player = Player(Vector2(WIDTH//2, HEIGHT))
+        player = Player(Vector2(Configs.VIRTUAL_WIDTH//2, Configs.VIRTUAL_HEIGHT))
         self.add_player(player)
         while self.running:
             #self.handle_events()  # <- process inputs / quit events
@@ -277,10 +321,29 @@ class Game:
                     player.current_charge += 0.5  # Start charging
                     player.charging = True
                     player.jump_direction = "up"  # Reset to straight jump
+                if event.key == pygame.K_TAB:  # or K_s if you want S
+                    self.toggle_fullscreen()
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:  # Left mouse button
-                    pos = event.pos
+                    mouse_x, mouse_y = event.pos
+                    screen_w, screen_h = pygame.display.get_surface().get_size()
+                    if (mouse_x < self.x_offset or mouse_x > screen_w - self.x_offset):
+                        continue
+                    if (mouse_y < self.y_offset or mouse_y > screen_h - self.y_offset):
+                        continue
+
+                    # Calculate scale ratios
+                    scale_x = Configs.VIRTUAL_WIDTH / (screen_w - self.x_offset)
+                    scale_y = Configs.VIRTUAL_HEIGHT / (screen_h - self.y_offset)
+
+                    mouse_x = mouse_x - self.x_offset
+                    mouse_y = mouse_y - self.y_offset
+                    # Scale to virtual coordinates
+                    virtual_mouse_x = mouse_x * scale_x
+                    virtual_mouse_y = mouse_y * scale_y
+                    pos = (virtual_mouse_x, virtual_mouse_y)
+
                     if self.prev_click_pos.x != -1 and self.prev_click_pos.y != -1:
                         dx = abs(pos[0] - self.prev_click_pos.x)
                         dy = abs(pos[1] - self.prev_click_pos.y)
