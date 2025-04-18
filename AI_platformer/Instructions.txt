@@ -1,0 +1,7 @@
+List of commands:
+TAB - switch between fullscreen and virtual screen (800x600)
+Shift - show background picture/hide it
+i - show lines/hide lines
+s - save current lines (those that you draw will be saved)
+p - pauses the game/ unpauses
+Exit - leaves the game

@@ -11,3 +11,4 @@ class Configs:
     BLACK = (0, 0, 0)
     VIRTUAL_WIDTH = 800
     VIRTUAL_HEIGHT = 600
+    START_FULLSCREEN = False

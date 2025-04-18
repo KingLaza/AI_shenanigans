@@ -1,4 +1,5 @@
 import copy
+import json
 
 import pygame
 #from pygame.examples.moveit import WIDTH, HEIGHT
@@ -33,21 +34,32 @@ class Game:
         self.x_offset = 0
         self.y_offset = 0
         self.running = True
+        self.show_lines = False
         #self.collision_lines = [((0, HEIGHT+60), (WIDTH+200, HEIGHT+60))]           #don't know why it has to be +200 on width but ok
         self.collision_lines = sorted(
             [Line(x1, y1, x2, y2) for (x1, y1, x2, y2) in LINES],
             key=lambda line: TYPE_PRIORITY[line.type]
         )
+        self.load_lines()       #added
         self.testPlayer = Player(Vector2(Configs.VIRTUAL_WIDTH//2, Configs.VIRTUAL_HEIGHT-120))     #added for testing
         self.prev_click_pos = Vector2(-1, -1)
         self.game_paused = False
         pygame.init()
 
+
         # Set up the screen (you can adjust the dimensions)
         #self.screen = pygame.display.set_mode((800, 600))
         self.real_screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN | pygame.RESIZABLE)  # or specific (1920, 1080)
+        #added this line below so that the game is staretd in a smaller screen
+        #self.window = pygame.display.set_mode((Configs.VIRTUAL_WIDTH, Configs.VIRTUAL_HEIGHT))
         self.virtual_screen = pygame.Surface((Configs.VIRTUAL_WIDTH, Configs.VIRTUAL_HEIGHT))
-        self.screen_rect = self.real_screen.get_rect()
+        #self.screen_rect = self.real_screen.get_rect()
+
+        # background stuff
+        self.bg_image_original = pygame.image.load("pictures/jk_01_01.png").convert()  # replace with your image
+        self.bg_visible = True
+
+        self.scaled_bg = self.get_scaled_bg((Configs.VIRTUAL_WIDTH, Configs.VIRTUAL_HEIGHT))
 
         pygame.display.set_caption("Jump Emperor")
 
@@ -57,12 +69,40 @@ class Game:
         #adding player and all that:
         #nah, not for now. bust later we need to add a lot of players, maybe not here but..
 
+    def get_scaled_bg(self, screen_size):
+        return pygame.transform.scale(self.bg_image_original, screen_size)
     def add_player(self, player):
         self.players.add(player)
 
     def process_players(self):
         for player in self.players:
             print("Very important work")
+
+    import json
+
+    def save_lines(self, filename="lines.json"):
+        lines_data = []
+        for line in self.collision_lines:
+            lines_data.append({
+                "x1": line.start.x,
+                "y1": line.start.y,
+                "x2": line.end.x,
+                "y2": line.end.y
+            })
+        with open(filename, "w") as f:
+            json.dump(lines_data, f, indent=4)
+
+    def load_lines(self, filename="lines.json"):
+        try:
+            print("load lines started")
+            with open(filename, "r") as f:
+                lines_data = json.load(f)
+                for data in lines_data:
+                    line = Line(data["x1"], data["y1"], data["x2"], data["y2"])
+                    self.collision_lines.append(line)
+            print("lines loaded successfully I guess", len(self.collision_lines))
+        except FileNotFoundError:
+            print("No saved lines found.")
 
     def collision_handler(self):
         # for player in self.players:
@@ -154,6 +194,8 @@ class Game:
 
     def render(self):
         self.virtual_screen.fill(Game.WHITE)
+        if self.bg_visible:
+            self.virtual_screen.blit(self.scaled_bg, (0, 0))
         self.render_lines(self.virtual_screen)
         self.render_players(self.virtual_screen)
 
@@ -180,15 +222,16 @@ class Game:
             pygame.draw.rect(surface, Game.BLUE, (pos.x, pos.y, player.width, player.height))
 
     def render_lines(self, surface):
-        for line in self.collision_lines:
-            pygame.draw.line(surface, self.BLACK, line.start, line.end, 3)
+        if self.show_lines:
+            for line in self.collision_lines:
+                pygame.draw.line(surface, self.BLACK, line.start, line.end, 3)
 
     def toggle_fullscreen(self):
         self.fullscreen = not self.fullscreen
         if self.fullscreen:
-            self.window = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+            self.window = pygame.display.set_mode((0, 0), pygame.FULLSCREEN | pygame.RESIZABLE)
         else:
-            self.window = pygame.display.set_mode((Configs.VIRTUAL_WIDTH, Configs.VIRTUAL_HEIGHT))
+            self.window = pygame.display.set_mode((Configs.VIRTUAL_WIDTH, Configs.VIRTUAL_HEIGHT), pygame.RESIZABLE)
 
     def handle_events(self):            #added a few things
         # Handle game events (key presses, etc.)
@@ -236,14 +279,21 @@ class Game:
                         self.prev_click_pos = Vector2(pos[0], pos[1])
                     print("Left click at:", pos)
             if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    self.running = False
                 if event.key == pygame.K_p:
                     self.game_paused = not self.game_paused
                 if event.key == pygame.K_TAB:  # or K_s
-                    self.fullscreen = not self.fullscreen
-                    if self.fullscreen:
-                        pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-                    else:
-                        pygame.display.set_mode((Configs.VIRTUAL_WIDTH, Configs.VIRTUAL_HEIGHT))
+                    self.toggle_fullscreen()
+                if event.key == pygame.K_LSHIFT or event.key == pygame.K_RSHIFT:
+                    self.bg_visible = not self.bg_visible
+                if event.key == pygame.K_s:
+                    self.save_lines()       #da se sacuva sta se izcrta
+                if event.key == pygame.K_i:
+                    self.show_lines = not self.show_lines
+            # if event.type == pygame.VIDEORESIZE:
+            #     screen = pygame.display.set_mode(event.size, pygame.RESIZABLE)
+            #     self.scaled_bg = self.get_scaled_bg(event.size)
 
     def update(self):
         # Update game state (move players, check collisions, etc.)
@@ -286,7 +336,7 @@ class Game:
 
     def runTest(self, paused=False):
         self.game_paused = paused
-        player = Player(Vector2(Configs.VIRTUAL_WIDTH//2, Configs.VIRTUAL_HEIGHT))
+        player = Player(Vector2(Configs.VIRTUAL_WIDTH//2, Configs.VIRTUAL_HEIGHT - 120))
         self.add_player(player)
         while self.running:
             #self.handle_events()  # <- process inputs / quit events
@@ -313,18 +363,31 @@ class Game:
 
                 # Start charging jump
             if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    self.running = False
                 if event.key == pygame.K_p:
                     self.game_paused = not self.game_paused
                     return
                 if event.key == pygame.K_SPACE and player.on_ground:
+                    print("clicked space ")
                     player.velocity.x = 0
                     player.current_charge += 0.5  # Start charging
                     player.charging = True
                     player.jump_direction = "up"  # Reset to straight jump
                 if event.key == pygame.K_TAB:  # or K_s if you want S
                     self.toggle_fullscreen()
+                if event.key == pygame.K_LSHIFT or event.key == pygame.K_RSHIFT:
+                        self.bg_visible = not self.bg_visible
+                if event.key == pygame.K_s:
+                    self.save_lines()
+                if event.key == pygame.K_i:
+                    self.show_lines = not self.show_lines
 
-            if event.type == pygame.MOUSEBUTTONDOWN:
+            # if event.type == pygame.VIDEORESIZE:
+            #     screen = pygame.display.set_mode(event.size, pygame.RESIZABLE)
+            #     self.scaled_bg = self.get_scaled_bg(event.size)
+
+            if event.type == pygame.MOUSEBUTTONDOWN and self.game_paused==True:
                 if event.button == 1:  # Left mouse button
                     mouse_x, mouse_y = event.pos
                     screen_w, screen_h = pygame.display.get_surface().get_size()
@@ -334,11 +397,12 @@ class Game:
                         continue
 
                     # Calculate scale ratios
-                    scale_x = Configs.VIRTUAL_WIDTH / (screen_w - self.x_offset)
-                    scale_y = Configs.VIRTUAL_HEIGHT / (screen_h - self.y_offset)
+                    scale_x = Configs.VIRTUAL_WIDTH / (screen_w - 2 * self.x_offset)
+                    scale_y = Configs.VIRTUAL_HEIGHT / (screen_h - 2 * self.y_offset)
 
                     mouse_x = mouse_x - self.x_offset
                     mouse_y = mouse_y - self.y_offset
+                    print("clicked on pos: ", mouse_x, mouse_y)
                     # Scale to virtual coordinates
                     virtual_mouse_x = mouse_x * scale_x
                     virtual_mouse_y = mouse_y * scale_y
@@ -356,7 +420,7 @@ class Game:
                             pos = (pos[0], self.prev_click_pos.y)
 
                         line = Line(self.prev_click_pos.x, self.prev_click_pos.y, pos[0], pos[1])
-                        self.insert_sorted(line)
+                        self.collision_lines.append(line)
                         self.prev_click_pos = Vector2(-1, -1)
                     else:
                         self.prev_click_pos = Vector2(pos[0], pos[1])
