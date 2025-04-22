@@ -9,6 +9,7 @@ from .configs import Configs
 from .data import LINES, TYPE_PRIORITY
 from .line import Line
 from .player import Player
+from .level import Level
 
 
 class Game:
@@ -30,17 +31,21 @@ class Game:
         self.map = map
         self.players = set()
         self.collision_lines = []
+        self.levels = []
+        self.levels.append(Level("00"))
+        self.levels.append(Level("01"))
+        self.current_level = 0
         self.fullscreen = True  # or False if you start windowed
         self.x_offset = 0
         self.y_offset = 0
         self.running = True
         self.show_lines = False
         #self.collision_lines = [((0, HEIGHT+60), (WIDTH+200, HEIGHT+60))]           #don't know why it has to be +200 on width but ok
-        self.collision_lines = sorted(
-            [Line(x1, y1, x2, y2) for (x1, y1, x2, y2) in LINES],
-            key=lambda line: TYPE_PRIORITY[line.type]
-        )
-        self.load_lines()       #added
+        # self.collision_lines = sorted(
+        #     [Line(x1, y1, x2, y2) for (x1, y1, x2, y2) in LINES],
+        #     key=lambda line: TYPE_PRIORITY[line.type]
+        # )
+        #self.load_lines()       #not needed anymore
         self.testPlayer = Player(Vector2(Configs.VIRTUAL_WIDTH//2, Configs.VIRTUAL_HEIGHT-120))     #added for testing
         self.prev_click_pos = Vector2(-1, -1)
         self.game_paused = False
@@ -56,12 +61,16 @@ class Game:
         #self.screen_rect = self.real_screen.get_rect()
 
         # background stuff
-        self.bg_image_original = pygame.image.load("pictures/jk_01_01.png").convert()  # replace with your image
+        self.bg_image_original = pygame.image.load("pictures/jk_00_00.png").convert()  # replace with your image
         self.bg_visible = True
 
         self.scaled_bg = self.get_scaled_bg((Configs.VIRTUAL_WIDTH, Configs.VIRTUAL_HEIGHT))
 
         pygame.display.set_caption("Jump Emperor")
+
+        #load levels with information
+        for level in self.levels:
+            level.load_assets()
 
         # Set the clock for FPS control
         self.clock = pygame.time.Clock()
@@ -80,7 +89,7 @@ class Game:
 
     import json
 
-    def save_lines(self, filename="lines.json"):
+    def save_lines(self, filename="lines/lines_00_01.json"):
         lines_data = []
         for line in self.collision_lines:
             lines_data.append({
@@ -92,7 +101,7 @@ class Game:
         with open(filename, "w") as f:
             json.dump(lines_data, f, indent=4)
 
-    def load_lines(self, filename="lines.json"):
+    def load_lines(self, filename="lines_00_00.json"):
         try:
             print("load lines started")
             with open(filename, "r") as f:
@@ -155,7 +164,7 @@ class Game:
             # if player.on_ground:
             #     continue
             was_on_ground = False
-            for line in self.collision_lines:
+            for line in self.levels[player.current_level].lines:
                 if not player.intersects_line(line):
                     continue
 
@@ -167,25 +176,28 @@ class Game:
                     case "horizontal":
 
                         if player.velocity.y > 0:
-                            player.position.y = line.y1 - player.height
-                            print(player.position, player.velocity)
+                            player.relative_position.y = line.y1 - player.height
+                            print(player.relative_position, player.velocity)
                             player.velocity.y = 0
                             player.velocity.x = 0
                             player.on_ground = True
                             player.jumping = False
                             was_on_ground = True
-                            print("Hitting ground")
                         if player.velocity.y == 0:
                             was_on_ground = True
                         elif player.velocity.y < 0:
-                            player.position.y = line.y1
+                            player.relative_position.y = line.y1
+                            player.position.y = line.y1 + player.current_level * Configs.VIRTUAL_HEIGHT
                             player.velocity.y = 0
 
                     case "vertical":
                         if player.velocity.x > 0:
-                            player.position.x = line.x1 - player.width - 3
+                            player.relative_position.x = line.x1 - player.width - 3
+                            player.position.x = line.x1 - player.width - 3 + 0 #no sideways levels for now
                         elif player.velocity.x < 0:
-                            player.position.x = line.x1  + 2
+                            player.relative_position.x = line.x1  + 2
+                            player.position.x = line.x1 + 2 + 0 #for now
+
                         player.velocity.x *= -1
 
             if not was_on_ground and player.on_ground:
@@ -195,7 +207,8 @@ class Game:
     def render(self):
         self.virtual_screen.fill(Game.WHITE)
         if self.bg_visible:
-            self.virtual_screen.blit(self.scaled_bg, (0, 0))
+            #self.virtual_screen.blit(self.scaled_bg, (0, 0))
+            self.virtual_screen.blit(self.levels[self.current_level].bg_picture_scaled, (0, 0))
         self.render_lines(self.virtual_screen)
         self.render_players(self.virtual_screen)
 
@@ -217,13 +230,22 @@ class Game:
             self.add_player(Player(position=copy.deepcopy(start_position)))
 
     def render_players(self, surface):
+        max_level = 0
         for player in self.players:
-            pos = player.position
+            if player.current_level > max_level:
+                max_level = player.current_level
+        self.current_level = max_level
+        for player in self.players:
+            if player.current_level < self.current_level:
+                continue
+            pos = player.relative_position
             pygame.draw.rect(surface, Game.BLUE, (pos.x, pos.y, player.width, player.height))
 
     def render_lines(self, surface):
         if self.show_lines:
-            for line in self.collision_lines:
+            for line in self.levels[self.current_level].lines:
+                pygame.draw.line(surface, self.BLACK, line.start, line.end, 3)
+            for line in self.collision_lines:  #only for now, remove later
                 pygame.draw.line(surface, self.BLACK, line.start, line.end, 3)
 
     def toggle_fullscreen(self):
@@ -291,6 +313,10 @@ class Game:
                     self.save_lines()       #da se sacuva sta se izcrta
                 if event.key == pygame.K_i:
                     self.show_lines = not self.show_lines
+                if event.key == pygame.K_o:
+                    for p in self.players:
+                        pl = p
+                    print("player 0 pos: ", pl.position, " relative pos: ", pl.relative_position, " curr_lvl: ", pl.current_level, " game lvl: ", self.current_level)
             # if event.type == pygame.VIDEORESIZE:
             #     screen = pygame.display.set_mode(event.size, pygame.RESIZABLE)
             #     self.scaled_bg = self.get_scaled_bg(event.size)
@@ -369,7 +395,6 @@ class Game:
                     self.game_paused = not self.game_paused
                     return
                 if event.key == pygame.K_SPACE and player.on_ground:
-                    print("clicked space ")
                     player.velocity.x = 0
                     player.current_charge += 0.5  # Start charging
                     player.charging = True
@@ -382,6 +407,10 @@ class Game:
                     self.save_lines()
                 if event.key == pygame.K_i:
                     self.show_lines = not self.show_lines
+                if event.key == pygame.K_o:
+                    for p in self.players:
+                        pl = p
+                    print("player 0 pos: ", pl.position, " relative pos: ", pl.relative_position, " curr_lvl: ", pl.current_level, " game lvl: ", self.current_level)
 
             # if event.type == pygame.VIDEORESIZE:
             #     screen = pygame.display.set_mode(event.size, pygame.RESIZABLE)

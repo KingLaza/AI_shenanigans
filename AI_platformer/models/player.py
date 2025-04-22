@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from pygame.math import Vector2
 import uuid
 
@@ -8,10 +10,12 @@ from .move import Move
 class Player:
     def __init__(self, position=Vector2(0,0), width=30, height=60, type="CPU"):
         self.position = position
+        self.relative_position = deepcopy(position)
         self.width = width
         self.height = height            #maybe move to configs later
         self.id = uuid.uuid4()
         self.velocity = Vector2(0, 0)
+        self.current_level = 0      #change this later
         self.jumping = False
         self.on_ground = True
         self.charging = False
@@ -100,13 +104,17 @@ class Player:
         if self.velocity != Vector2(0, 0):
             self.position.x += self.velocity.x
             self.position.y += self.velocity.y
+            self.relative_position.x = (self.relative_position.x + self.velocity.x) % Configs.VIRTUAL_WIDTH
+            self.relative_position.y = (self.relative_position.y + self.velocity.y) % Configs.VIRTUAL_HEIGHT
+            self.current_level = max(0, -int(self.position.y // Configs.VIRTUAL_HEIGHT))
 
     def set_position(self, x, y):
         self.position = Vector2(x, y)
+        self.relative_position = Vector2(0, 0)
 
 
     def intersects_line(self, line):
-        player_lines = self.get_rectangle_edges(self.position.x, self.position.y, self.width, self.height)
+        player_lines = self.get_rectangle_edges(self.relative_position.x, self.relative_position.y, self.width, self.height)
         line_vector = Vector2(line.x2-line.x1, line.y2-line.y1)
 
         for player_line in player_lines:

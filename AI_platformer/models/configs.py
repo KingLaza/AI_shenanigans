@@ -12,3 +12,4 @@ class Configs:
     VIRTUAL_WIDTH = 800
     VIRTUAL_HEIGHT = 600
     START_FULLSCREEN = False
+    CURRENT_MAP = "00"
