@@ -180,7 +180,6 @@ class Game:
                         if player.velocity.y > 0:
                             player.relative_position.y = line.y1 - player.height
                             player.position.y = Configs.VIRTUAL_HEIGHT - (line.y1 - player.height) + player.current_level * Configs.VIRTUAL_HEIGHT
-                            print(player.relative_position, player.velocity)
                             player.velocity.y = 0
                             player.velocity.x = 0
                             player.on_ground = True

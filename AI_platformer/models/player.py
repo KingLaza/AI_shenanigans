@@ -48,7 +48,6 @@ class Player:
             else:
                 self.curr_move = self.moves[self.curr_move_count]
                 self.current_charge = self.curr_move.initial_strength
-                print(self.current_charge)
 
         if self.on_ground:
             match self.curr_move.move_type:
