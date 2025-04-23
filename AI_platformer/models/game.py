@@ -1,5 +1,6 @@
 import copy
 import json
+from copy import deepcopy
 
 import pygame
 #from pygame.examples.moveit import WIDTH, HEIGHT
@@ -38,6 +39,7 @@ class Game:
         self.fullscreen = True  # or False if you start windowed
         self.x_offset = 0
         self.y_offset = 0
+        self.star_position = Vector2(0, 0) #I wish to use this to reset the game when needed
         self.running = True
         self.show_lines = False
         #self.collision_lines = [((0, HEIGHT+60), (WIDTH+200, HEIGHT+60))]           #don't know why it has to be +200 on width but ok
@@ -177,6 +179,7 @@ class Game:
 
                         if player.velocity.y > 0:
                             player.relative_position.y = line.y1 - player.height
+                            player.position.y = Configs.VIRTUAL_HEIGHT - (line.y1 - player.height) + player.current_level * Configs.VIRTUAL_HEIGHT
                             print(player.relative_position, player.velocity)
                             player.velocity.y = 0
                             player.velocity.x = 0
@@ -187,7 +190,7 @@ class Game:
                             was_on_ground = True
                         elif player.velocity.y < 0:
                             player.relative_position.y = line.y1
-                            player.position.y = line.y1 + player.current_level * Configs.VIRTUAL_HEIGHT
+                            player.position.y = Configs.VIRTUAL_HEIGHT - line.y1 + player.current_level * Configs.VIRTUAL_HEIGHT
                             player.velocity.y = 0
 
                     case "vertical":
@@ -226,6 +229,7 @@ class Game:
         pygame.display.flip()
 
     def add_cpu_players(self, count, start_position):
+        self.start_position = start_position
         for _ in range(count):
             self.add_player(Player(position=copy.deepcopy(start_position)))
 
@@ -317,6 +321,10 @@ class Game:
                     for p in self.players:
                         pl = p
                     print("player 0 pos: ", pl.position, " relative pos: ", pl.relative_position, " curr_lvl: ", pl.current_level, " game lvl: ", self.current_level)
+                if event.key == pygame.K_r:
+                    for p in self.players:
+                        p.reset_player(self.start_position.x, self.start_position.y)
+
             # if event.type == pygame.VIDEORESIZE:
             #     screen = pygame.display.set_mode(event.size, pygame.RESIZABLE)
             #     self.scaled_bg = self.get_scaled_bg(event.size)
@@ -362,7 +370,8 @@ class Game:
 
     def runTest(self, paused=False):
         self.game_paused = paused
-        player = Player(Vector2(Configs.VIRTUAL_WIDTH//2, Configs.VIRTUAL_HEIGHT - 120))
+        self.start_position = Vector2(Configs.VIRTUAL_WIDTH//2, Configs.VIRTUAL_HEIGHT - 120)
+        player = Player(deepcopy(self.start_position))
         self.add_player(player)
         while self.running:
             #self.handle_events()  # <- process inputs / quit events
@@ -411,6 +420,9 @@ class Game:
                     for p in self.players:
                         pl = p
                     print("player 0 pos: ", pl.position, " relative pos: ", pl.relative_position, " curr_lvl: ", pl.current_level, " game lvl: ", self.current_level)
+                if event.key == pygame.K_r:
+                    for p in self.players:
+                        p.reset_player(self.start_position.x, self.start_position.y)
 
             # if event.type == pygame.VIDEORESIZE:
             #     screen = pygame.display.set_mode(event.size, pygame.RESIZABLE)

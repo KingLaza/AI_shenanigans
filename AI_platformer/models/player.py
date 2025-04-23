@@ -9,7 +9,9 @@ from .move import Move
 
 class Player:
     def __init__(self, position=Vector2(0,0), width=30, height=60, type="CPU"):
-        self.position = position
+        self.position = Vector2(0,0)
+        self.position.x = position.x
+        self.position.y = Configs.VIRTUAL_HEIGHT - position.y
         self.relative_position = deepcopy(position)
         self.width = width
         self.height = height            #maybe move to configs later
@@ -103,15 +105,27 @@ class Player:
     def update_position(self):
         if self.velocity != Vector2(0, 0):
             self.position.x += self.velocity.x
-            self.position.y += self.velocity.y
+            self.position.y -= self.velocity.y      #position.y will now act like height from the bottom of the map (0 to map_max_height)
             self.relative_position.x = (self.relative_position.x + self.velocity.x) % Configs.VIRTUAL_WIDTH
             self.relative_position.y = (self.relative_position.y + self.velocity.y) % Configs.VIRTUAL_HEIGHT
-            self.current_level = max(0, -int(self.position.y // Configs.VIRTUAL_HEIGHT))
+            self.current_level = max(0, int(self.position.y // Configs.VIRTUAL_HEIGHT))
 
     def set_position(self, x, y):
-        self.position = Vector2(x, y)
-        self.relative_position = Vector2(0, 0)
+        self.position = Vector2(x, Configs.VIRTUAL_HEIGHT - y)
+        self.relative_position = Vector2(x, y)
 
+    def reset_player(self, x, y):
+        self.position = Vector2(x, Configs.VIRTUAL_HEIGHT - y)
+        self.relative_position = Vector2(x, y)
+        self.velocity = Vector2(0, 0)
+        self.on_ground = True
+        self.jumping = False
+        self.move_over = False
+        self.charging = False
+        self.curr_move_count = 0
+        self.moves = [Move() for _ in range(Configs.MOVE_COUNT)]
+        self.curr_move = self.moves[0]
+        self.current_charge = self.curr_move.initial_strength
 
     def intersects_line(self, line):
         player_lines = self.get_rectangle_edges(self.relative_position.x, self.relative_position.y, self.width, self.height)

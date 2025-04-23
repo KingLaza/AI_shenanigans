@@ -1,0 +1,4 @@
+* When just chilling on a ground line, the player isn't actually on top of it. He's sinking a bit into it.
+* Collisions need a bit of work as well. We need to see what line is the closest if more are making contact with the 
+	player at the same time, and then only activate the collision that's closest to it.
+* Currently the game crashes when going up to level 3 because we don't actually have that level, we only have level 1 and 2
