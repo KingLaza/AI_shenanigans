@@ -12,6 +12,6 @@ if __name__ == '__main__':
 
     #game.add_player(Player(position=Vector2(WIDTH // 2, HEIGHT - 120)))
 
-    game.add_cpu_players(200, player_start_position)
+    game.add_cpu_players(100, player_start_position)
     game.run(False)
     # game.runTest()          #this game.runTest() is made for debugging and collision checking etc.
