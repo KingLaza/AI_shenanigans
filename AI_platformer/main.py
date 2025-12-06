@@ -12,6 +12,15 @@ if __name__ == '__main__':
 
     #game.add_player(Player(position=Vector2(WIDTH // 2, HEIGHT - 120)))
 
+    #testing out the new stuff:
+    # Quick test - put this in a test file:
+    from genetic_algorithm import Genome, Population
+
+    genome = Genome.random()
+    print(f"Created genome with {len(genome.moves)} moves!")
+    
+
+
     game.add_cpu_players(100, player_start_position)
     game.run(False)
     # game.runTest()          #this game.runTest() is made for debugging and collision checking etc.
