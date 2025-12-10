@@ -5,7 +5,7 @@ class Configs:
     WALK_SPEED = 4  # could be more
     MOVE_COUNT = 20
     FPS = 60
-    GRAVITY = (9.81 / FPS) * 3
+    GRAVITY = (9.81 / FPS) * 4      #it's originally * 3
     BLUE = (0, 0, 255)
     WHITE = (255, 255, 255)
     BLACK = (0, 0, 0)

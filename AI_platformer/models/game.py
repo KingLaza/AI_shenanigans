@@ -33,8 +33,13 @@ class Game:
         self.players = set()
         self.collision_lines = []
         self.levels = []
-        self.levels.append(Level("00"))
-        self.levels.append(Level("01"))
+        for i in range (10):
+            b = i
+            if i<10:
+                b = '0' + str(i)
+            self.levels.append(Level(str(b)))
+        # self.levels.append(Level("00"))
+        # self.levels.append(Level("01"))
         self.current_level = 0
         self.fullscreen = True  # or False if you start windowed
         self.x_offset = 0
@@ -100,8 +105,9 @@ class Game:
                 "x2": line.end.x,
                 "y2": line.end.y
             })
-        with open(filename, "w") as f:
+        with open("lines/" + filename + ".json", "w") as f:
             json.dump(lines_data, f, indent=4)
+            print("lines should be saved now")
 
     def load_lines(self, filename="lines_00_00.json"):
         try:
@@ -116,51 +122,6 @@ class Game:
             print("No saved lines found.")
 
     def collision_handler(self):
-        # for player in self.players:
-        #     player.on_ground = False  # Reset before checking
-        #
-        #     for line in self.collision_lines:
-        #         x1, y1, x2, y2 = line.x1, line.y1, line.x2, line.y2
-        #         margin_of_error = 10
-        #
-        #         if line.type == "Horizontal":
-        #             # Check if player is falling and is above the line, but close enough to "land" on it
-        #             if (
-        #                     player.velocity.y >= 0 and
-        #                     player.position.y <= y1 and
-        #                     abs(player.position.y + player.velocity.y - y1) < margin_of_error and  # Tweak threshold as needed
-        #                     x1 <= player.position.x <= x2
-        #             ):
-        #                 player.position.y = y1
-        #                 player.velocity.y = 0
-        #                 player.on_ground = True
-        #                 player.jumping = False
-        #
-        #
-        #         elif line.type == "Vertical":
-        #             # Normalize y1 and y2 to make sure y1 <= y2
-        #             y_top = min(y1, y2)
-        #             y_bottom = max(y1, y2)
-        #             player_half_width = player.width / 2 if hasattr(player, 'width') else 0  # Optional
-        #             if (
-        #                 y_top <= player.position.y <= y_bottom and
-        #                 abs(player.position.x - x1) <= margin_of_error + player_half_width
-        #             ):
-        #                 player.velocity.x = -player.velocity.x  # Bounce off
-                        # Optional: nudge player slightly away to avoid sticking
-                        # if player.position.x < x1:
-                        #     player.position.x = x1 - (margin_of_error + 1)
-                        # else:
-                        #     player.position.x = x1 + (margin_of_error + 1)
-            # Ground collision (if still in air and hits bottom)
-        # for player in self.players:
-        #     ground_y = self.GROUND_Y
-        #     if player.position.y >= ground_y:
-        #         player.position.y = ground_y
-        #         player.velocity.y = 0
-        #         player.velocity.x = 0
-        #         player.on_ground = True
-        #         player.jumping = False
 
         for player in self.players:
             # if player.on_ground:
@@ -304,6 +265,9 @@ class Game:
                         self.prev_click_pos = Vector2(pos[0], pos[1])
                     print("Left click at:", pos)
             if event.type == pygame.KEYDOWN:
+                if event.unicode.isdigit():
+                    print("Teleporting to map: " + str(int(event.unicode)))
+                    self.teleport_to_map_number(int(event.unicode))
                 if event.key == pygame.K_ESCAPE:
                     self.running = False
                 if event.key == pygame.K_p:
@@ -312,8 +276,15 @@ class Game:
                     self.toggle_fullscreen()
                 if event.key == pygame.K_LSHIFT or event.key == pygame.K_RSHIFT:
                     self.bg_visible = not self.bg_visible
+                if event.key == pygame.K_z:
+                    print("clicked z")
+                    self.collision_lines.pop()
                 if event.key == pygame.K_s:
-                    self.save_lines()       #da se sacuva sta se izcrta
+                    temp_name = self.current_level
+                    if self.current_level < 10:
+                        temp_name = '0' + str(self.current_level)
+                    print("clicked s")
+                    self.save_lines("lines_00_" + temp_name)       #da se sacuva sta se izcrta
                 if event.key == pygame.K_i:
                     self.show_lines = not self.show_lines
                 if event.key == pygame.K_o:
@@ -411,8 +382,15 @@ class Game:
                     self.toggle_fullscreen()
                 if event.key == pygame.K_LSHIFT or event.key == pygame.K_RSHIFT:
                         self.bg_visible = not self.bg_visible
+                if event.key == pygame.K_z:
+                    print("clicked z")
+                    self.collision_lines.pop()
                 if event.key == pygame.K_s:
-                    self.save_lines()
+                    temp_name = self.current_level
+                    if self.current_level < 10:
+                        temp_name = '0' + str(self.current_level)
+                    print("clicked s")
+                    self.save_lines("lines_00_" + temp_name)  #
                 if event.key == pygame.K_i:
                     self.show_lines = not self.show_lines
                 if event.key == pygame.K_o:
@@ -529,3 +507,7 @@ class Game:
                 self.collision_lines.insert(i, line)
                 return
         self.collision_lines.append(line)
+
+    def teleport_to_map_number(self, map_number):
+        pass
+        #not finised yet, need to gather the data first

@@ -21,6 +21,6 @@ if __name__ == '__main__':
     
 
 
-    game.add_cpu_players(100, player_start_position)
-    game.run(False)
-    # game.runTest()          #this game.runTest() is made for debugging and collision checking etc.
+    game.add_cpu_players(5, player_start_position)
+    #game.run(False)
+    game.runTest()          #this game.runTest() is made for debugging and collision checking etc.
