@@ -1,27 +1,29 @@
+//this is under the assumption of virtual_width being 800 and virtual_height being 600
+//did it for levels 0 to 5 (and 05)
 [
   {
-    "x": 100,
-    "y": 100
+    "x": 400,
+    "y": 480
   },
   {
-    "x": 100,
-    "y": 100
+    "x": 70,
+    "y": 70
   },
   {
-    "x": 100,
-    "y": 100
+    "x": 500,
+    "y": 280
   },
   {
-    "x": 100,
-    "y": 100
+    "x": 300,
+    "y": 300
   },
   {
-    "x": 100,
-    "y": 100
+    "x": 280,
+    "y": 30
   },
   {
-    "x": 100,
-    "y": 100
+    "x": 600,
+    "y": 70
   },
   {
     "x": 100,

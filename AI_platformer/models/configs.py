@@ -13,3 +13,4 @@ class Configs:
     VIRTUAL_HEIGHT = 600
     START_FULLSCREEN = False
     CURRENT_MAP = "00"
+    LINE_WIDTH = 2

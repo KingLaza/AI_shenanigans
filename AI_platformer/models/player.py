@@ -8,7 +8,7 @@ from .configs import Configs
 from .move import Move
 
 class Player:
-    def __init__(self, position=Vector2(0,0), width=30, height=60, type="CPU"):
+    def __init__(self, position=Vector2(0,0), width=30, height=50, type="CPU"):
         self.position = Vector2(0,0)
         self.position.x = position.x
         self.position.y = Configs.VIRTUAL_HEIGHT - position.y
@@ -131,11 +131,14 @@ class Player:
         line_vector = Vector2(line.x2-line.x1, line.y2-line.y1)
 
         for player_line in player_lines:
-            if self.line_intersect(player_line[0], player_line[1], line):
+            if self.line_intersect(player_line[0], player_line[1], player_line[2], line):
                 return True
         return False
 
-    def line_intersect(self, p1, p2, line):
+    def line_intersect(self, p1, p2, line_type, line):
+
+        # if (line_type != line.type):          #this didn't really do anything..
+        #     return False
         # Convert player line segment to vector
         vect1 = p2 - p1
         # Convert the other line segment to a vector
@@ -169,10 +172,10 @@ class Player:
 
         # Return pairs of points representing the edges (lines) of the rectangle
         edges = [
-            (top_left, top_right),  # Top edge
-            (top_right, bottom_right),  # Right edge
-            (bottom_right, bottom_left),  # Bottom edge
-            (bottom_left, top_left)  # Left edge
+            (top_left, top_right, "horizontal"),  # Top edge
+            (top_right, bottom_right, "vertical"),  # Right edge
+            (bottom_right, bottom_left ,"horizontal"),  # Bottom edge
+            (bottom_left, top_left, "vertical")  # Left edge
         ]
 
         return edges

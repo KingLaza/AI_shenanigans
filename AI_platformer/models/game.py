@@ -7,7 +7,7 @@ import pygame
 from pygame.math import Vector2
 
 from .configs import Configs
-from .data import LINES, TYPE_PRIORITY
+from .data import LINES, TYPE_PRIORITY, POINTS
 from .line import Line
 from .player import Player
 from .level import Level
@@ -208,9 +208,9 @@ class Game:
     def render_lines(self, surface):
         if self.show_lines:
             for line in self.levels[self.current_level].lines:
-                pygame.draw.line(surface, self.BLACK, line.start, line.end, 3)
+                pygame.draw.line(surface, self.BLACK, line.start, line.end, Configs.LINE_WIDTH)
             for line in self.collision_lines:  #only for now, remove later
-                pygame.draw.line(surface, self.BLACK, line.start, line.end, 3)
+                pygame.draw.line(surface, self.BLACK, line.start, line.end, Configs.LINE_WIDTH)
 
     def toggle_fullscreen(self):
         self.fullscreen = not self.fullscreen
@@ -342,6 +342,7 @@ class Game:
         self.game_paused = paused
         self.start_position = Vector2(Configs.VIRTUAL_WIDTH//2, Configs.VIRTUAL_HEIGHT - 120)
         player = Player(deepcopy(self.start_position))
+        self.players.clear()
         self.add_player(player)
         while self.running:
             #self.handle_events()  # <- process inputs / quit events
@@ -370,6 +371,9 @@ class Game:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     self.running = False
+                if event.unicode.isdigit():
+                    print("Teleporting to map: " + str(int(event.unicode)))
+                    self.teleport_to_map_number(int(event.unicode))
                 if event.key == pygame.K_p:
                     self.game_paused = not self.game_paused
                     return
@@ -509,5 +513,51 @@ class Game:
         self.collision_lines.append(line)
 
     def teleport_to_map_number(self, map_number):
-        pass
-        #not finised yet, need to gather the data first
+
+        # Validate map number
+        if map_number < 0 or map_number >= len(POINTS):
+            print(f"⚠️  Invalid map number: {map_number}. Available: 0-{len(POINTS) - 1}")
+            return
+
+        print("current number of players: ", len(self.players))
+
+        if map_number >= len(self.levels):
+            print(f"⚠️  Level {map_number} not loaded!")
+            return
+
+        # Get spawn coordinates
+        spawn_x, spawn_y = POINTS[map_number]
+
+        # Update game state
+        self.current_level = map_number
+
+        print(f"🌟 Teleporting to map {map_number} at ({spawn_x:.1f}, {spawn_y:.1f})")
+        print(f"   Level has {len(self.levels[map_number].lines)} collision lines")
+
+        # Update all players
+        for p in self.players:
+            print(f"   BEFORE: Pos={p.position}, RelPos={p.relative_position}, Level={p.current_level}")
+
+            # Reset all player state
+            p.velocity = Vector2(0, 0)
+            p.on_ground = True
+            p.jumping = False
+            p.charging = False
+            p.current_charge = 0
+            p.move_over = False
+
+            # Set coordinates using the CORRECT formula
+            p.relative_position.x = spawn_x
+            p.relative_position.y = spawn_y
+            p.current_level = map_number
+
+            # CRITICAL: Use the same formula as collision detection
+            p.position.x = spawn_x
+            p.position.y = Configs.VIRTUAL_HEIGHT - spawn_y + map_number * Configs.VIRTUAL_HEIGHT
+
+            print(f"   AFTER:  Pos={p.position}, RelPos={p.relative_position}, Level={p.current_level}")
+
+            # Verify the coordinate relationship
+            expected_y = Configs.VIRTUAL_HEIGHT - p.relative_position.y + p.current_level * Configs.VIRTUAL_HEIGHT
+            if abs(p.position.y - expected_y) > 0.1:
+                print(f"   ⚠️  Coordinate mismatch! Expected Y={expected_y}, Got Y={p.position.y}")
