@@ -180,20 +180,3 @@ class Player:
 
         return edges
 
-    #INSIDE, LEFT, RIGHT, BOTTOM, TOP = 0, 1, 2, 4, 8
-
-    # def compute_out_code(self, x, y, px1, py1, px2, py2):
-    #     code = Player.INSIDE
-    #
-    #     if x < px1:
-    #         code |= Player.LEFT
-    #     elif x > px2:
-    #         code |= Player.RIGHT
-    #     if y < py1:
-    #         code |= Player.BOTTOM
-    #     elif y > py2:
-    #         code |= Player.TOP
-    #     return code
-    #
-    # def intersects_line(self, line):
-

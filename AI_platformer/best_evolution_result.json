@@ -1,0 +1,87 @@
+{
+  "best_fitness": 913.0,
+  "best_height": 913.0,
+  "best_level": 1,
+  "moveset": [
+    {
+      "move_type": 4,
+      "strength": 5
+    },
+    {
+      "move_type": 0,
+      "strength": 16
+    },
+    {
+      "move_type": 2,
+      "strength": 15
+    },
+    {
+      "move_type": 3,
+      "strength": 13
+    },
+    {
+      "move_type": 3,
+      "strength": 11
+    },
+    {
+      "move_type": 3,
+      "strength": 6
+    },
+    {
+      "move_type": 0,
+      "strength": 17
+    },
+    {
+      "move_type": 1,
+      "strength": 7
+    },
+    {
+      "move_type": 4,
+      "strength": 9
+    },
+    {
+      "move_type": 4,
+      "strength": 10
+    },
+    {
+      "move_type": 2,
+      "strength": 19
+    },
+    {
+      "move_type": 0,
+      "strength": 6
+    },
+    {
+      "move_type": 1,
+      "strength": 20
+    },
+    {
+      "move_type": 4,
+      "strength": 0
+    },
+    {
+      "move_type": 3,
+      "strength": 4
+    },
+    {
+      "move_type": 2,
+      "strength": 19
+    },
+    {
+      "move_type": 4,
+      "strength": 3
+    },
+    {
+      "move_type": 3,
+      "strength": 10
+    },
+    {
+      "move_type": 4,
+      "strength": 12
+    },
+    {
+      "move_type": 2,
+      "strength": 13
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 import copy
 import json
+import math
 from copy import deepcopy
 
 import pygame
@@ -121,50 +122,86 @@ class Game:
         except FileNotFoundError:
             print("No saved lines found.")
 
-    def collision_handler(self):
 
+    def collision_handler(self):
         for player in self.players:
-            # if player.on_ground:
-            #     continue
-            was_on_ground = False
+            # STEP 1: COLLECT all colliding lines
+            colliding_lines = []
+
             for line in self.levels[player.current_level].lines:
                 if not player.intersects_line(line):
                     continue
 
-                type = line.type
-                final_position = player.position
+                # Calculate distance from player center to this line
+                player_center_x = player.relative_position.x + player.width / 2
+                player_center_y = player.relative_position.y + player.height / 2
 
-                #print("line hit: ", type, line.start, line.end, "player pos", player.position)
-                match type:
-                    case "horizontal":
+                # Distance to line (simplified - using line start point)
+                # line_center_x = (line.start.x + line.end.x) / 2
+                # line_center_y = (line.start.y + line.end.y) / 2
 
-                        if player.velocity.y > 0:
-                            player.relative_position.y = line.y1 - player.height
-                            player.position.y = Configs.VIRTUAL_HEIGHT - (line.y1 - player.height) + player.current_level * Configs.VIRTUAL_HEIGHT
-                            player.velocity.y = 0
-                            player.velocity.x = 0
-                            player.on_ground = True
-                            player.jumping = False
-                            was_on_ground = True
-                        if player.velocity.y == 0:
-                            was_on_ground = True
-                        elif player.velocity.y < 0:
-                            player.relative_position.y = line.y1
-                            player.position.y = Configs.VIRTUAL_HEIGHT - line.y1 + player.current_level * Configs.VIRTUAL_HEIGHT
-                            player.velocity.y = 0
+                #this above is apsolute baloney! Shit at it's worst
 
-                    case "vertical":
-                        if player.velocity.x > 0:
-                            player.relative_position.x = line.x1 - player.width - 3
-                            player.position.x = line.x1 - player.width - 3 + 0 #no sideways levels for now
-                        elif player.velocity.x < 0:
-                            player.relative_position.x = line.x1  + 2
-                            player.position.x = line.x1 + 2 + 0 #for now
+                #proper formula:
+                distance = abs((line.end.x - line.start.x) * (player_center_y - line.start.y) - (line.end.y - line.start.y)*(player_center_x - line.start.x))
+                distance = distance / math.sqrt((line.end.x - line.start.x) ** 2 + (line.end.y - line.start.y) ** 2)
 
-                        player.velocity.x *= -1
+
+                # distance = ((player_center_x - line_center_x) ** 2 +
+                #             (player_center_y - line_center_y) ** 2) ** 0.5
+
+                colliding_lines.append((line, distance))
+
+            # STEP 2: No collisions? Handle edge case
+            if not colliding_lines:
+                if player.on_ground:
+                    #print("Player walked off an edge!")
+                    player.on_ground = False
+                continue
+
+            # STEP 3: Find closest collision and apply ONLY that one
+            colliding_lines.sort(key=lambda x: x[1])  # Sort by distance
+            closest_line, distance = colliding_lines[0]
+
+            # Debug output for multiple collisions
+            # if len(colliding_lines) > 1:
+            #     print(f"🎯 {len(colliding_lines)} collisions detected, using closest: {closest_line.type}")
+            #     print("line is: ", closest_line.start.x, closest_line.start.y, closest_line.end.x, closest_line.end.y)
+
+            # Apply the closest collision using your existing logic
+            was_on_ground = False
+            type = closest_line.type
+
+            match type:
+                case "horizontal":
+                    if player.velocity.y > 0:
+                        player.relative_position.y = closest_line.y1 - player.height
+                        player.position.y = Configs.VIRTUAL_HEIGHT - (
+                                    closest_line.y1 - player.height) + player.current_level * Configs.VIRTUAL_HEIGHT
+                        player.velocity.y = 0
+                        player.velocity.x = 0
+                        player.on_ground = True
+                        player.jumping = False
+                        was_on_ground = True
+                    if player.velocity.y == 0:
+                        was_on_ground = True
+                    elif player.velocity.y < 0:
+                        player.relative_position.y = closest_line.y1
+                        player.position.y = Configs.VIRTUAL_HEIGHT - closest_line.y1 + player.current_level * Configs.VIRTUAL_HEIGHT
+                        player.velocity.y = 0
+
+                case "vertical":
+                    if player.velocity.x > 0:
+                        player.relative_position.x = closest_line.x1 - player.width - 3
+                        player.position.x = closest_line.x1 - player.width - 3 + 0  # no sideways levels for now
+                    elif player.velocity.x < 0:
+                        player.relative_position.x = closest_line.x1 + 2
+                        player.position.x = closest_line.x1 + 2 + 0  # for now
+
+                    player.velocity.x *= -1
 
             if not was_on_ground and player.on_ground:
-                print("Player walked off an edge!")
+                #print("Player walked off an edge!")
                 player.on_ground = False
 
     def render(self):
