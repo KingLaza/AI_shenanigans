@@ -3,6 +3,7 @@ from copy import deepcopy
 from pygame.math import Vector2
 import uuid
 
+from .move_type_management import MoveType
 from .configs import Configs
 
 from .move import Move
@@ -49,52 +50,36 @@ class Player:
                 self.curr_move = self.moves[self.curr_move_count]
                 self.current_charge = self.curr_move.initial_strength
 
-        if self.on_ground:
-            match self.curr_move.move_type:
-                case 0:
-                    if self.current_charge == 0:
-                        self.on_ground = False
-                        self.jumping = True
-                        self.velocity = Vector2(0, -self.curr_move.initial_strength)
-                    if self.current_charge == -1:
-                        self.move_over = True
-                    self.current_charge -= 1
-                    # skok samo gore
-                case 1:
-                    if self.current_charge == 0:
-                        self.on_ground = False
-                        self.jumping = True
-                        self.velocity = Vector2(-Configs.WALK_SPEED, -self.curr_move.initial_strength)
-                    if self.current_charge == -1:
-                        self.move_over = True
-                    self.current_charge -= 1
-                    # skok na levo
-                case 2:
-                    if self.current_charge == 0:
-                        self.on_ground = False
-                        self.jumping = True
-                        self.velocity = Vector2(Configs.WALK_SPEED, -self.curr_move.initial_strength)
-                    if self.current_charge == -1:
-                        self.move_over = True
-                        self.velocity = Vector2(0, 0)
-                    self.current_charge -= 1
-                    # skok na desno
-                case 3:
-                    if self.current_charge == 0:
-                        self.move_over = True
-                        self.velocity = Vector2(0, 0)
-                    else:
-                        self.velocity = Vector2(-Configs.WALK_SPEED, 0)
-                        self.current_charge -= 1
-                    # hodanje na levo
-                case 4:
-                    if self.current_charge == 0:
-                        self.move_over = True
-                        self.velocity = Vector2(0, 0)
-                    else:
-                        self.velocity = Vector2(Configs.WALK_SPEED, 0)
-                        self.current_charge -= 1
-                    # hodanje ne desno
+        if not self.on_ground:
+            return
+
+        move = self.curr_move.move_type
+        dx = 0
+
+        if MoveType.LEFT in move:
+            dx = -Configs.WALK_SPEED
+        elif MoveType.RIGHT in move:
+            dx = Configs.WALK_SPEED
+
+        if MoveType.UP in move:
+            if self.current_charge == 0:
+                self.on_ground = False
+                self.jumping = True
+                self.velocity = Vector2(dx, -self.curr_move.initial_strength)
+
+            if self.current_charge == -1:
+                self.move_over = True
+
+            self.current_charge -= 1
+        else:
+            # Walk: move while charge > 0, stop at charge 0
+            if self.current_charge == 0:
+                self.move_over = True
+                self.velocity = Vector2(0, 0)
+            else:
+                self.velocity = Vector2(dx, 0)
+                self.current_charge -= 1
+
         return
 
     def apply_gravity(self):
