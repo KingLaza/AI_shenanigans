@@ -1,9 +1,4 @@
-from .player import Player
-from .move import Move
-from .game import Game
-from .configs import Configs
-from .line import Line
-from .move_type_management import MoveType
+from .state import GameState, PlayerState, Configs
+from .vec2 import Vec2
 
-# Define what gets imported with "from package import *"
-__all__ = ['Player', 'Move', 'Game', 'Configs', 'Line', 'MoveType']
+__all__ = ["GameState", "PlayerState", "Configs", "Vec2"]
